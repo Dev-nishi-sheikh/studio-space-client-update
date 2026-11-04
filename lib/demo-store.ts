@@ -18,6 +18,12 @@ import type {
 import { hoursBetween, sleep, sortByRecommended, todayISO } from "./utils";
 
 const PREFIX = "studiospace.v1.";
+
+function dateTimestamp(value: string | null | undefined) {
+  if (!value) return 0;
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
 const KEYS = {
   seeded: "seeded",
   studios: "studios",
@@ -112,7 +118,7 @@ export async function demoGetStudios(query: StudioQuery = {}): Promise<Studio[]>
       break;
     case "newest":
       result = [...result].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        (a, b) => dateTimestamp(b.createdAt) - dateTimestamp(a.createdAt),
       );
       break;
     case "rating":
@@ -142,7 +148,7 @@ export async function demoGetMyListings(email: string): Promise<Studio[]> {
   await sleep(300);
   return studios()
     .filter((studio) => studio.ownerEmail === email)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => dateTimestamp(b.createdAt) - dateTimestamp(a.createdAt));
 }
 
 export async function demoCreateStudio(draft: StudioDraft, user: User): Promise<Studio> {

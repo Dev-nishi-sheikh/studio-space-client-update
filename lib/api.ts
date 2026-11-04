@@ -114,6 +114,22 @@ function toStudio(payload: unknown): Studio {
   };
 }
 
+function toBooking(payload: unknown): Booking {
+  const booking = payload as Record<string, unknown>;
+  const bookingDate = booking.date ?? booking.bookingDate;
+  return {
+    ...(booking as unknown as Booking),
+    _id: String(booking._id ?? booking.id ?? ""),
+    date: typeof bookingDate === "string" ? bookingDate : "",
+    createdAt: typeof booking.createdAt === "string" ? booking.createdAt : "",
+  };
+}
+
+function toBookings(payload: unknown): Booking[] {
+  const value = unwrap<unknown>(payload, "bookings");
+  return (Array.isArray(value) ? value : []).map(toBooking);
+}
+
 /* ------------------------------------------------------------------ */
 /* Auth                                                                */
 /* ------------------------------------------------------------------ */
@@ -249,15 +265,14 @@ export async function deleteStudio(id: string, user: User): Promise<void> {
 export async function getMyBookings(email: string): Promise<Booking[]> {
   if (isDemoMode) return demo.demoGetMyBookings(email);
   const payload = await request<unknown>("/bookings/mine");
-  const value = unwrap<unknown>(payload, "bookings");
-  return (Array.isArray(value) ? value : []) as Booking[];
+  return toBookings(payload);
 }
 
 export async function getBooking(id: string): Promise<Booking | null> {
   if (isDemoMode) return demo.demoGetBooking(id);
   try {
     const payload = await request<unknown>(`/bookings/${id}`);
-    return unwrap<Booking>(payload, "booking");
+    return toBooking(unwrap<Booking>(payload, "booking"));
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
@@ -277,7 +292,7 @@ export async function createBooking(
       date: undefined,
     }),
   });
-  return unwrap<Booking>(payload, "booking");
+  return toBooking(unwrap<Booking>(payload, "booking"));
 }
 
 export async function cancelBooking(id: string, user: User): Promise<Booking> {
@@ -285,7 +300,7 @@ export async function cancelBooking(id: string, user: User): Promise<Booking> {
   const payload = await request<unknown>(`/bookings/${id}/cancel`, {
     method: "PATCH",
   });
-  return unwrap<Booking>(payload, "booking");
+  return toBooking(unwrap<Booking>(payload, "booking"));
 }
 
 export async function getBookedSlots(studioId: string, date: string) {
@@ -304,6 +319,17 @@ export async function getWishlist(email: string): Promise<string[]> {
   if (isDemoMode) return demo.demoGetWishlist(email);
   const payload = await request<unknown>("/wishlist");
   const value = unwrap<unknown>(payload, "studioIds");
+  if (Array.isArray(value)) return value.filter((id) => typeof id === "string") as string[];
+  const studios = Array.isArray(payload)
+    ? payload
+    : payload && typeof payload === "object" && "data" in payload
+      ? (payload as { data: unknown }).data
+      : payload;
+  if (Array.isArray(studios)) {
+    return studios
+      .map((studio) => String((studio as Record<string, unknown>).id ?? (studio as Record<string, unknown>)._id ?? ""))
+      .filter(Boolean);
+  }
   return Array.isArray(value) ? (value as string[]) : [];
 }
 
@@ -312,7 +338,7 @@ export async function toggleWishlist(
   studioId: string,
 ): Promise<string[]> {
   if (isDemoMode) return demo.demoToggleWishlist(email, studioId);
-  const payload = await request<unknown>(`/wishlist/${studioId}`, { method: "POST" });
+  const payload = await request<unknown>(`/wishlist/${studioId}/toggle`, { method: "POST" });
   const value = unwrap<unknown>(payload, "studioIds");
   return Array.isArray(value) ? (value as string[]) : [];
 }

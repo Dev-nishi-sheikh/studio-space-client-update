@@ -14,7 +14,11 @@ export function formatCurrency(value: number, withCents = false) {
   }).format(Number.isFinite(value) ? value : 0);
 }
 
-export function formatDate(date: string | Date, style: "short" | "long" | "weekday" = "short") {
+export function formatDate(
+  date: string | Date | null | undefined,
+  style: "short" | "long" | "weekday" = "short",
+) {
+  if (date === null || date === undefined || date === "") return "—";
   const d = typeof date === "string" ? new Date(`${date.slice(0, 10)}T12:00:00`) : date;
   if (Number.isNaN(d.getTime())) return "—";
   if (style === "long") {
