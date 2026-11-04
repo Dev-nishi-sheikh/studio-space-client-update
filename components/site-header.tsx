@@ -48,8 +48,13 @@ export function SiteHeader() {
     if (!menuOpen) return;
     const original = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
     return () => {
       document.body.style.overflow = original;
+      document.removeEventListener("keydown", closeOnEscape);
     };
   }, [menuOpen]);
 
@@ -84,8 +89,9 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="print-hidden sticky top-0 z-50 border-b border-border/80 bg-background/85 backdrop-blur-xl">
-      <div className="container-x flex h-[72px] items-center justify-between gap-4">
+    <>
+      <header className="print-hidden sticky top-0 z-50 border-b border-border/80 bg-background/85 backdrop-blur-xl">
+        <div className="container-x flex h-[72px] items-center justify-between gap-4">
         <Logo />
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
@@ -206,15 +212,16 @@ export function SiteHeader() {
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
-      </div>
-
+        </div>
+      </header>
       {menuOpen && (
-        <div className="fixed inset-x-0 bottom-0 top-[72px] z-40 overflow-y-auto border-t border-border bg-background px-5 py-6 lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-40 overflow-y-auto border-t border-border bg-background px-5 py-6 text-foreground lg:hidden">
           <div className="flex flex-col gap-1">
             {NAV_LINKS.map((link, index) => (
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => setMenuOpen(false)}
                 className={cn(
                   "flex items-center justify-between border-b border-border/70 py-4 font-display text-2xl font-medium tracking-tight",
                   isActive(link.href) && "text-accent",
@@ -256,6 +263,7 @@ export function SiteHeader() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-3 text-xs font-bold"
                   >
                     <item.icon className="h-4 w-4 text-accent" />
@@ -277,10 +285,18 @@ export function SiteHeader() {
             </div>
           ) : (
             <div className="mt-8 flex flex-col gap-3">
-              <Link href="/login" className={buttonClass({ variant: "outline", size: "lg" })}>
+              <Link
+                href="/login"
+                onClick={() => setMenuOpen(false)}
+                className={buttonClass({ variant: "outline", size: "lg" })}
+              >
                 Log in
               </Link>
-              <Link href="/register" className={buttonClass({ size: "lg" })}>
+              <Link
+                href="/register"
+                onClick={() => setMenuOpen(false)}
+                className={buttonClass({ size: "lg" })}
+              >
                 Create an account
               </Link>
               <div className="mt-2 flex items-center justify-between">
@@ -291,6 +307,6 @@ export function SiteHeader() {
           )}
         </div>
       )}
-    </header>
+    </>
   );
 }
