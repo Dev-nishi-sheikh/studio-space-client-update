@@ -336,11 +336,14 @@ export async function getWishlist(email: string): Promise<string[]> {
 export async function toggleWishlist(
   email: string,
   studioId: string,
-): Promise<string[]> {
+): Promise<{ saved: boolean; studioId: string }> {
   if (isDemoMode) return demo.demoToggleWishlist(email, studioId);
   const payload = await request<unknown>(`/wishlist/${studioId}/toggle`, { method: "POST" });
-  const value = unwrap<unknown>(payload, "studioIds");
-  return Array.isArray(value) ? (value as string[]) : [];
+  const value = unwrap<{ saved?: unknown; studioId?: unknown }>(payload);
+  return {
+    saved: value.saved === true,
+    studioId: typeof value.studioId === "string" ? value.studioId : studioId,
+  };
 }
 
 export function getGoogleAuthUrl() {

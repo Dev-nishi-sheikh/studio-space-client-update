@@ -395,7 +395,10 @@ export async function demoGetWishlist(email: string): Promise<string[]> {
   return wishlistStore()[email] ?? [];
 }
 
-export async function demoToggleWishlist(email: string, studioId: string): Promise<string[]> {
+export async function demoToggleWishlist(
+  email: string,
+  studioId: string,
+): Promise<{ saved: boolean; studioId: string }> {
   ensureSeeded();
   const lists = wishlistStore();
   const current = lists[email] ?? [];
@@ -404,7 +407,7 @@ export async function demoToggleWishlist(email: string, studioId: string): Promi
     : [...current, studioId];
   lists[email] = next;
   write(KEYS.wishlist, lists);
-  return next;
+  return { saved: next.includes(studioId), studioId };
 }
 
 export function demoResetWorkspace() {
